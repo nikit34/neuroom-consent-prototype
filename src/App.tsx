@@ -512,7 +512,7 @@ function ConsentBanner(props: {
   return (
     <section className="consent-banner">
       <div className="consent-banner__logo">
-        <img alt="" src={assets.bannerLogo} />
+        <img alt="" src={assets.logoMark} />
       </div>
       <div className="consent-banner__body">
         <h2>
@@ -893,7 +893,7 @@ function ParentConfirmPage() {
     <section className="surface-card surface-card--parent">
       <div className="parent-hero">
         <div className="consent-banner__logo">
-          <img alt="" src={assets.bannerLogo} />
+          <img alt="" src={assets.logoMark} />
         </div>
         <div>
           <h2>Подтверждение согласия</h2>

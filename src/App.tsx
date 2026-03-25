@@ -588,8 +588,8 @@ function HomeworkCard(props: { item: HomeworkCardItem }) {
       </div>
 
       <div className="homework-card__content">
-        <h4>{props.item.title}</h4>
         <p>{props.item.subject}</p>
+        <h4>{props.item.title}</h4>
       </div>
 
       <div className="due-row">

@@ -533,18 +533,22 @@ img {
   font-weight: 500;
 }
 
-.homework-card__content h4 {
+.homework-card__content p {
   margin: 0;
-  font-size: 20px;
-  line-height: 28px;
+  color: var(--black-3);
+  font-size: 13px;
+  line-height: 18px;
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
-.homework-card__content p {
-  margin: 4px 0 0;
-  color: var(--black-3);
-  font-size: 14px;
-  line-height: 20px;
+.homework-card__content h4 {
+  margin: 2px 0 0;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 400;
+  color: var(--black-1);
 }
 
 .due-row {

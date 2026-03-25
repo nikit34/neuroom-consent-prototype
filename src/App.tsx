@@ -352,7 +352,7 @@ function PrototypeShell() {
       return;
     }
 
-    const timer = window.setTimeout(() => setToast(null), 2400);
+    const timer = window.setTimeout(() => setToast(null), 5000);
     return () => window.clearTimeout(timer);
   }, [toast]);
 
@@ -390,6 +390,7 @@ function PrototypeShell() {
   }
 
   return (
+    <>
     <div className="app">
       <aside className="sidebar">
         <div className="sidebar__brand">
@@ -494,8 +495,19 @@ function PrototypeShell() {
         />
       ) : null}
 
-      {toast ? <div className="toast">{toast}</div> : null}
     </div>
+
+    {toast ? (
+      <div className="toast-backdrop" onClick={() => setToast(null)}>
+        <div className="toast" onClick={(event) => event.stopPropagation()}>
+          <div className="toast__icon">✓</div>
+          <p className="toast__title">{toast}</p>
+          <p className="toast__subtitle">Перешли ссылку родителю в любом мессенджере</p>
+        </div>
+      </div>
+    ) : null}
+
+    </>
   );
 }
 
@@ -887,7 +899,8 @@ function ProfilePage(props: { onOpenSendLink: () => void }) {
 
 function ParentConfirmPage() {
   const navigate = useNavigate();
-  const { state, dispatch } = useDemoState();
+  const { dispatch } = useDemoState();
+  const [agreed, setAgreed] = useState(false);
 
   return (
     <section className="surface-card surface-card--parent">
@@ -896,17 +909,50 @@ function ParentConfirmPage() {
           <img alt="" src={assets.logoMark} />
         </div>
         <div>
-          <h2>Подтверждение согласия</h2>
-          <p>
-            Подтвердите доступ для ученика Артема П. в Нейрум.
-            Нажмите кнопку ниже, чтобы разрешить ребёнку пользоваться сервисом.
-          </p>
+          <h2>Согласие на обработку данных</h2>
+          <p>Заполните данные, чтобы подтвердить использование сервиса Нейрум вашим ребёнком — учеником Артемом П.</p>
         </div>
+      </div>
+
+      <div className="parent-form">
+        <div className="parent-form__row">
+          <label className="parent-form__field">
+            <span>Фамилия</span>
+            <input defaultValue="Петрова" placeholder="Фамилия" type="text" />
+          </label>
+          <label className="parent-form__field">
+            <span>Имя</span>
+            <input defaultValue="Елена" placeholder="Имя" type="text" />
+          </label>
+          <label className="parent-form__field">
+            <span>Отчество</span>
+            <input defaultValue="Викторовна" placeholder="Отчество" type="text" />
+          </label>
+        </div>
+        <div className="parent-form__row">
+          <label className="parent-form__field">
+            <span>Телефон</span>
+            <input defaultValue="+7 999 123 45 67" placeholder="+7" type="tel" />
+          </label>
+          <label className="parent-form__field">
+            <span>Email (необязательно)</span>
+            <input placeholder="email@example.com" type="email" />
+          </label>
+        </div>
+
+        <label className="parent-form__checkbox">
+          <input checked={agreed} onChange={() => setAgreed((v) => !v)} type="checkbox" />
+          <span>
+            Я даю согласие на обработку персональных данных моего ребёнка в соответствии с{" "}
+            <a href="/policy" target="_blank">политикой конфиденциальности</a>
+          </span>
+        </label>
       </div>
 
       <div className="parent-actions">
         <button
           className="primary-button primary-button--fit"
+          disabled={!agreed}
           onClick={() => {
             dispatch({ type: "CONFIRM_PARENT" });
             navigate("/profile");
@@ -915,7 +961,6 @@ function ParentConfirmPage() {
         >
           Подтвердить согласие
         </button>
-        <span className="mini-badge">{state.lastLinkSentAt ? `Ссылка отправлена: ${state.lastLinkSentAt}` : "Ссылка открыта впервые"}</span>
       </div>
     </section>
   );

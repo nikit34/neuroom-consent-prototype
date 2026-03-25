@@ -1050,16 +1050,16 @@ function ScenarioLab(props: {
       </div>
 
       <div className="lab__buttons">
-        <button className="lab__button" onClick={() => dispatch({ type: "ADVANCE_DAY" })} type="button">
+        <button className="lab__button" onClick={() => { dispatch({ type: "ADVANCE_DAY" }); props.onClose(); }} type="button">
           −1 день
         </button>
-        <button className="lab__button" onClick={() => dispatch({ type: "CONFIRM_PARENT" })} type="button">
+        <button className="lab__button" onClick={() => { dispatch({ type: "CONFIRM_PARENT" }); props.onClose(); }} type="button">
           Родитель подтвердил
         </button>
-        <button className="lab__button" onClick={() => dispatch({ type: "SET_STATUS", status: "grace_expired" })} type="button">
+        <button className="lab__button" onClick={() => { dispatch({ type: "SET_STATUS", status: "grace_expired" }); props.onClose(); }} type="button">
           Время вышло
         </button>
-        <button className="lab__button" onClick={props.onReset} type="button">
+        <button className="lab__button" onClick={() => { props.onReset(); props.onClose(); }} type="button">
           Сначала
         </button>
       </div>

@@ -344,6 +344,45 @@ img {
   color: var(--green-1);
 }
 
+.mini-badge--danger {
+  background: var(--red-2);
+  color: var(--red-1);
+}
+
+.countdown {
+  color: var(--purple-1);
+}
+
+.countdown--warning {
+  color: #e09000;
+}
+
+.countdown--critical {
+  color: var(--red-1);
+}
+
+.grace-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--grey-2);
+  overflow: hidden;
+}
+
+.grace-progress__bar {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--purple-1);
+  transition: width 0.3s ease;
+}
+
+.grace-progress__bar--warning {
+  background: #e09000;
+}
+
+.grace-progress__bar--critical {
+  background: var(--red-1);
+}
+
 .primary-button {
   min-height: 44px;
   min-width: 44px;

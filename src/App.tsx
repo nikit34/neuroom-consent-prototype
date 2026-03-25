@@ -311,17 +311,19 @@ function pageMeta(pathname: string) {
 function statusLabel(status: ConsentStatus) {
   switch (status) {
     case "grace_active_not_sent":
-      return "Grace / not sent";
+      return "Ожидание";
     case "grace_active_sent":
-      return "Grace / sent";
+      return "Ссылка отправлена";
     case "grace_expired":
-      return "Grace / expired";
+      return "Время вышло";
     case "confirmed":
-      return "Confirmed";
+      return "Подтверждено";
     default:
       return status;
   }
 }
+
+const SHARE_URL = "https://neuroom.pw/register/parent/abc123token";
 
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, loadState);
@@ -357,13 +359,33 @@ function PrototypeShell() {
   const meta = pageMeta(location.pathname);
   const showConsentBanner = !location.pathname.startsWith("/parent/confirm") && state.status !== "confirmed";
 
+  async function handleQuickShare() {
+    dispatch({ type: "SEND_LINK" });
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "Нейрум — согласие родителя",
+          text: "Подтвердите согласие на использование Нейрум вашим ребёнком",
+          url: SHARE_URL
+        });
+        setToast("Ссылка отправлена родителю.");
+      } else {
+        await navigator.clipboard.writeText(SHARE_URL);
+        setToast("Ссылка скопирована. Перешли её родителю.");
+      }
+    } catch {
+      await navigator.clipboard.writeText(SHARE_URL);
+      setToast("Ссылка скопирована. Перешли её родителю.");
+    }
+  }
+
   function handleSendLink(method: "share" | "copy") {
     dispatch({ type: "SEND_LINK" });
     setShareOpen(false);
     setToast(
       method === "share"
         ? "Ссылка отправлена родителю."
-        : "Ссылка скопирована. Теперь её можно переслать."
+        : "Ссылка скопирована. Перешли её родителю."
     );
   }
 
@@ -430,7 +452,7 @@ function PrototypeShell() {
               daysLeft={state.daysLeft}
               expired={state.status === "grace_expired"}
               sent={state.status === "grace_active_sent"}
-              onAction={() => setShareOpen(true)}
+              onAction={handleQuickShare}
             />
           ) : null}
 
@@ -440,11 +462,8 @@ function PrototypeShell() {
 
           <Routes>
             <Route path="/" element={<DashboardPage />} />
-            <Route path="/homework/:id" element={<HomeworkDetailPage onOpenSendLink={() => setShareOpen(true)} />} />
-            <Route
-              path="/homework/:id/send"
-              element={<HomeworkSendPage onOpenSendLink={() => setShareOpen(true)} />}
-            />
+            <Route path="/homework/:id" element={<HomeworkDetailPage />} />
+            <Route path="/homework/:id/send" element={<HomeworkSendPage />} />
             <Route path="/profile" element={<ProfilePage onOpenSendLink={() => setShareOpen(true)} />} />
             <Route path="/parent/confirm" element={<ParentConfirmPage />} />
           </Routes>
@@ -452,7 +471,7 @@ function PrototypeShell() {
       </main>
 
       <button className="lab-toggle" onClick={() => setLabOpen((prev) => !prev)} type="button">
-        {labOpen ? "Скрыть lab" : "Scenario Lab"}
+        {labOpen ? "Скрыть" : "Сценарии"}
       </button>
 
       {labOpen ? (
@@ -471,7 +490,7 @@ function PrototypeShell() {
           onClose={() => setShareOpen(false)}
           onCopy={() => handleSendLink("copy")}
           onShare={() => handleSendLink("share")}
-          url="https://neuroom.pw/register/parent/abc123token"
+          url={SHARE_URL}
         />
       ) : null}
 
@@ -498,14 +517,13 @@ function ConsentBanner(props: {
       <div className="consent-banner__body">
         <h2>
           {props.expired
-            ? "Срок ожидания истёк. Чтобы снова сдавать ДЗ, нужно согласие родителя"
+            ? "Время вышло. Отправь ссылку родителю, чтобы снова сдавать ДЗ"
             : props.sent
-              ? `Ссылка уже отправлена. Осталось ${props.daysLeft} дн.`
-              : `Нужно согласие родителя. Осталось ${props.daysLeft} дн.`}
+              ? <>Ссылка отправлена. Осталось <strong className={`countdown${props.daysLeft <= 1 ? " countdown--critical" : props.daysLeft <= 3 ? " countdown--warning" : ""}`}>{props.daysLeft} дн.</strong></>
+              : <>Нужно согласие родителя. Осталось <strong className={`countdown${props.daysLeft <= 1 ? " countdown--critical" : props.daysLeft <= 3 ? " countdown--warning" : ""}`}>{props.daysLeft} дн.</strong></>}
         </h2>
         <p>
-          Вместо фуллскрин-блокировки student видит статус, дедлайн и может отправить
-          ссылку родителю в один тап.
+          Отправь ссылку маме или папе — они подтвердят за пару минут.
         </p>
       </div>
       <button className="primary-button" onClick={props.onAction} type="button">
@@ -520,9 +538,9 @@ function SuccessNotice(props: { parentName: string }) {
     <section className="success-notice">
       <div>
         <h2>Согласие получено</h2>
-        <p>{props.parentName} подтвердил доступ. Student-flow больше не показывает banner и блок на отправке.</p>
+        <p>{props.parentName} подтвердил(а) доступ. Теперь ты можешь сдавать домашние задания без ограничений.</p>
       </div>
-      <span className="success-notice__badge">Confirmed</span>
+      <span className="success-notice__badge">Подтверждено</span>
     </section>
   );
 }
@@ -643,8 +661,6 @@ function HomeworkTopBar() {
 
 function HomeworkDescriptionCard(props: {
   showActions: boolean;
-  blocked: boolean;
-  onOpenSendLink: () => void;
 }) {
   return (
     <section className="homework-card-shell">
@@ -685,36 +701,23 @@ function HomeworkDescriptionCard(props: {
       </div>
 
       {props.showActions ? (
-        props.blocked ? (
-          <div className="inline-lock">
-            <strong>Согласие родителя ещё не подтверждено</strong>
-            <p>Сдача новых фото временно закрыта. Отправь ссылку родителю, чтобы продолжить.</p>
-            <button className="primary-button primary-button--fit" onClick={props.onOpenSendLink} type="button">
-              Отправить ссылку родителю
-            </button>
-          </div>
-        ) : (
-          <div className="detail-actions">
-            <NavLink className="primary-button primary-button--fit primary-button--icon" to="/homework/42/send">
-              <img alt="" src={assets.buttonBolt} />
-              <span>Сдать ДЗ на проверку</span>
-            </NavLink>
-            <button className="hint-button" type="button">
-              <img alt="" src={assets.helpIcon} />
-              <span>Как правильно фотографировать?</span>
-              <img alt="" src={assets.chevron} />
-            </button>
-          </div>
-        )
+        <div className="detail-actions">
+          <NavLink className="primary-button primary-button--fit primary-button--icon" to="/homework/42/send">
+            <img alt="" src={assets.buttonBolt} />
+            <span>Сдать ДЗ на проверку</span>
+          </NavLink>
+          <button className="hint-button" type="button">
+            <img alt="" src={assets.helpIcon} />
+            <span>Как правильно фотографировать?</span>
+            <img alt="" src={assets.chevron} />
+          </button>
+        </div>
       ) : null}
     </section>
   );
 }
 
-function HomeworkDetailPage(props: { onOpenSendLink: () => void }) {
-  const { state } = useDemoState();
-  const blocked = state.status === "grace_expired";
-
+function HomeworkDetailPage() {
   return (
     <div className="detail-stack">
       <HomeworkTopBar />
@@ -731,14 +734,13 @@ function HomeworkDetailPage(props: { onOpenSendLink: () => void }) {
         </span>
       </section>
 
-      <HomeworkDescriptionCard blocked={blocked} onOpenSendLink={props.onOpenSendLink} showActions />
+      <HomeworkDescriptionCard showActions />
     </div>
   );
 }
 
-function HomeworkSendPage(props: { onOpenSendLink: () => void }) {
+function HomeworkSendPage() {
   const { state, dispatch } = useDemoState();
-  const blocked = state.status === "grace_expired";
 
   return (
     <div className="detail-stack">
@@ -790,34 +792,38 @@ function HomeworkSendPage(props: { onOpenSendLink: () => void }) {
           </span>
         </div>
 
-        {blocked ? (
-          <div className="inline-lock">
-            <strong>Для повторной отправки нужно согласие родителя</strong>
-            <p>Можно просмотреть все детали задания, но загрузка новых фото пока ограничена.</p>
-            <button className="primary-button primary-button--fit" onClick={props.onOpenSendLink} type="button">
-              Отправить ссылку родителю
-            </button>
-          </div>
-        ) : (
-          <div className="detail-actions">
-            <button className="primary-button primary-button--fit primary-button--icon" onClick={() => dispatch({ type: "SUBMIT_HOMEWORK" })} type="button">
-              <img alt="" src={assets.buttonBolt} />
-              <span>Загрузить новые фото</span>
-            </button>
-            <button className="hint-button" type="button">
-              <img alt="" src={assets.helpIcon} />
-              <span>Как правильно фотографировать?</span>
-              <img alt="" src={assets.chevron} />
-            </button>
-          </div>
-        )}
+        <div className="detail-actions">
+          <button className="primary-button primary-button--fit primary-button--icon" onClick={() => dispatch({ type: "SUBMIT_HOMEWORK" })} type="button">
+            <img alt="" src={assets.buttonBolt} />
+            <span>Загрузить новые фото</span>
+          </button>
+          <button className="hint-button" type="button">
+            <img alt="" src={assets.helpIcon} />
+            <span>Как правильно фотографировать?</span>
+            <img alt="" src={assets.chevron} />
+          </button>
+        </div>
 
         {state.homeworkSubmitted ? (
           <div className="success-panel">Новые фото отправлены. Учитель увидит повторную сдачу в ближайшее время.</div>
         ) : null}
       </section>
 
-      <HomeworkDescriptionCard blocked={blocked} onOpenSendLink={props.onOpenSendLink} showActions={false} />
+      <HomeworkDescriptionCard showActions={false} />
+    </div>
+  );
+}
+
+function GraceProgressBar(props: { daysLeft: number; total: number }) {
+  const pct = Math.max(0, Math.min(100, (props.daysLeft / props.total) * 100));
+  const urgent = props.daysLeft <= 1;
+  const warning = props.daysLeft <= 3;
+  return (
+    <div className="grace-progress">
+      <div
+        className={`grace-progress__bar${urgent ? " grace-progress__bar--critical" : warning ? " grace-progress__bar--warning" : ""}`}
+        style={{ width: `${pct}%` }}
+      />
     </div>
   );
 }
@@ -825,6 +831,7 @@ function HomeworkSendPage(props: { onOpenSendLink: () => void }) {
 function ProfilePage(props: { onOpenSendLink: () => void }) {
   const { state } = useDemoState();
   const confirmed = state.status === "confirmed";
+  const expired = state.status === "grace_expired";
 
   return (
     <div className="detail-layout">
@@ -832,10 +839,14 @@ function ProfilePage(props: { onOpenSendLink: () => void }) {
         <div className="surface-card__header">
           <div>
             <h3>Согласие родителя</h3>
-            <p>Карточка статуса находится в профиле ученика и не прячется в session-only skip.</p>
+            <p>Статус подтверждения от родителя</p>
           </div>
-          <span className={`mini-badge ${confirmed ? "mini-badge--success" : ""}`}>{statusLabel(state.status)}</span>
+          <span className={`mini-badge ${confirmed ? "mini-badge--success" : expired ? "mini-badge--danger" : ""}`}>{statusLabel(state.status)}</span>
         </div>
+
+        {!confirmed && !expired ? (
+          <GraceProgressBar daysLeft={state.daysLeft} total={7} />
+        ) : null}
 
         <div className="profile-panel">
           <div className="profile-panel__block">
@@ -843,8 +854,8 @@ function ProfilePage(props: { onOpenSendLink: () => void }) {
             <strong>
               {confirmed
                 ? `Подтверждено: ${state.parentName}`
-                : state.status === "grace_expired"
-                  ? "Срок ожидания истёк"
+                : expired
+                  ? "Время вышло"
                   : `Осталось ${state.daysLeft} дн.`}
             </strong>
           </div>
@@ -870,16 +881,6 @@ function ProfilePage(props: { onOpenSendLink: () => void }) {
           </button>
         )}
       </section>
-
-      <aside className="surface-card surface-card--side">
-        <h3>Analytics</h3>
-        <ul className="metric-list">
-          <li>consent_banner_shown</li>
-          <li>consent_link_shared</li>
-          <li>consent_parent_completed</li>
-          <li>consent_grace_expired</li>
-        </ul>
-      </aside>
     </div>
   );
 }
@@ -897,8 +898,8 @@ function ParentConfirmPage() {
         <div>
           <h2>Подтверждение согласия</h2>
           <p>
-            Подтвердите доступ для ученика Артема П. в Нейрум. После этого student-flow
-            мгновенно перейдёт в состояние confirmed.
+            Подтвердите доступ для ученика Артема П. в Нейрум.
+            Нажмите кнопку ниже, чтобы разрешить ребёнку пользоваться сервисом.
           </p>
         </div>
       </div>
@@ -914,7 +915,7 @@ function ParentConfirmPage() {
         >
           Подтвердить согласие
         </button>
-        <span className="mini-badge">{state.lastLinkSentAt ?? "ссылка открыта впервые"}</span>
+        <span className="mini-badge">{state.lastLinkSentAt ? `Ссылка отправлена: ${state.lastLinkSentAt}` : "Ссылка открыта впервые"}</span>
       </div>
     </section>
   );
@@ -931,47 +932,26 @@ function ScenarioLab(props: {
     <aside className="lab">
       <div className="lab__header">
         <div>
-          <p>Scenario Lab</p>
-          <strong>Consent state machine</strong>
+          <p>Сценарии</p>
+          <strong>{statusLabel(state.status)} · {state.daysLeft} дн.</strong>
         </div>
         <button className="lab__close" onClick={props.onClose} type="button">
           Закрыть
         </button>
       </div>
 
-      <div className="lab__block">
-        <span>Текущее состояние</span>
-        <strong>{statusLabel(state.status)}</strong>
-        <small>{state.daysLeft} дн. осталось</small>
-      </div>
-
       <div className="lab__buttons">
-        <button className="lab__button" onClick={props.onOpenShare} type="button">
-          Отправить ссылку
-        </button>
         <button className="lab__button" onClick={() => dispatch({ type: "ADVANCE_DAY" })} type="button">
-          Минус 1 день
+          −1 день
         </button>
         <button className="lab__button" onClick={() => dispatch({ type: "CONFIRM_PARENT" })} type="button">
-          Confirm parent
+          Родитель подтвердил
+        </button>
+        <button className="lab__button" onClick={() => dispatch({ type: "SET_STATUS", status: "grace_expired" })} type="button">
+          Время вышло
         </button>
         <button className="lab__button" onClick={props.onReset} type="button">
-          Reset
-        </button>
-      </div>
-
-      <div className="lab__statuses">
-        <button className="lab__status" onClick={() => dispatch({ type: "SET_STATUS", status: "grace_active_not_sent" })} type="button">
-          Grace / not sent
-        </button>
-        <button className="lab__status" onClick={() => dispatch({ type: "SET_STATUS", status: "grace_active_sent" })} type="button">
-          Grace / sent
-        </button>
-        <button className="lab__status" onClick={() => dispatch({ type: "SET_STATUS", status: "grace_expired" })} type="button">
-          Expired
-        </button>
-        <button className="lab__status" onClick={() => dispatch({ type: "SET_STATUS", status: "confirmed" })} type="button">
-          Confirmed
+          Сначала
         </button>
       </div>
     </aside>
@@ -990,7 +970,7 @@ function ShareSheet(props: {
         <div className="share-sheet__header">
           <div>
             <h3>Отправить ссылку родителю</h3>
-            <p>Этот MVP переиспользует уже существующую token-link механику вместо нового SMS-сервиса.</p>
+            <p>Родитель перейдёт по ссылке и подтвердит согласие.</p>
           </div>
           <button className="share-sheet__close" onClick={props.onClose} type="button">
             Закрыть

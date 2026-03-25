@@ -1581,13 +1581,8 @@ img {
   }
 
   .sidebar__profile {
-    margin-left: auto;
-    padding: 0;
-    font-size: 13px;
+    display: none;
   }
-
-  .sidebar__profile p { font-size: 13px; }
-  .sidebar__profile span { font-size: 12px; }
 
   .main-header,
   .page {
@@ -1601,12 +1596,54 @@ img {
   }
 
   .consent-banner {
-    padding: 20px;
+    padding: 16px;
+    gap: 12px;
   }
 
   .consent-banner__logo {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .consent-banner__body h2 {
+    font-size: 16px;
+    line-height: 22px;
+  }
+
+  .consent-banner__body p {
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  .lab-toggle {
+    top: 8px;
+    right: 8px;
+    min-height: 32px;
+    padding: 6px 12px;
+    font-size: 12px;
+    z-index: 15;
+  }
+
+  .modal-card {
+    padding: 24px;
+    max-height: 95vh;
+  }
+
+  .modal-header h2 {
+    font-size: 18px;
+    line-height: 24px;
+  }
+
+  .parent-standalone {
+    padding: 12px;
+  }
+
+  .surface-card {
+    padding: 16px;
+  }
+
+  .success-notice__dismiss {
+    align-self: flex-end;
   }
 }
 
@@ -1656,7 +1693,6 @@ img {
   }
 
   .filter-button,
-  .primary-button--fit,
   .hint-button,
   .show-more-button {
     width: 100%;

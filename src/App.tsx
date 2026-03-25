@@ -517,7 +517,7 @@ function ConsentBanner(props: {
       <div className="consent-banner__body">
         <h2>
           {props.expired
-            ? "Время вышло. Отправь ссылку родителю, чтобы снова сдавать ДЗ"
+            ? "Время вышло. Отправь ссылку родителю — это займёт пару минут"
             : props.sent
               ? <>Ссылка отправлена. Осталось <strong className={`countdown${props.daysLeft <= 1 ? " countdown--critical" : props.daysLeft <= 3 ? " countdown--warning" : ""}`}>{props.daysLeft} дн.</strong></>
               : <>Нужно согласие родителя. Осталось <strong className={`countdown${props.daysLeft <= 1 ? " countdown--critical" : props.daysLeft <= 3 ? " countdown--warning" : ""}`}>{props.daysLeft} дн.</strong></>}
